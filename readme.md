@@ -379,7 +379,7 @@ Total:  320 bytes (из 512 доступных)
 | 📅 Вторник | user/watering/day2 | 1 | 0 |
 | 📅 Среда | user/watering/day3 | 1 | 0 |
 | 📅 Четверг | user/watering/day4 | 1 | 0 |
-| 📅 Пятница | user/watering/day5 | 1 | | |
+| 📅 Пятница | user/watering/day5 | 1 | 0 |
 | 📅 Суббота | user/watering/day6 | 1 | 0 |
 | 📅 Воскресенье | user/watering/day7 | 1 | 0 |
 
@@ -390,11 +390,11 @@ Total:  320 bytes (из 512 доступных)
 | ▶ Старт | user/watering/control | START | — |
 | ⏹ Стоп | user/watering/control | STOP | — |
 | 🌱 Зона 1 | user/watering/control | RELAY_ON 1 | RELAY_OFF 1 |
-| 🌱 Зона 2 | user/watering/control | |RELAY_ON 2 | RELAY_OFF 2 |
-| 🌱 Зона 3 | user/watering/control | |RELAY_ON 3 | RELAY_OFF 3 |
-| 🌱 Зона 4 | user/watering/control | |RELAY_ON 4 | RELAY_OFF 4 |
-| 🌱 Зона 5 | user/watering/control | |RELAY_ON 5 | RELAY_OFF 5 |
-| 🌱 Зона 6 | user/watering/control | |RELAY_ON 6 | RELAY_OFF 6 |
+| 🌱 Зона 2 | user/watering/control | RELAY_ON 2 | RELAY_OFF 2 |
+| 🌱 Зона 3 | user/watering/control | RELAY_ON 3 | RELAY_OFF 3 |
+| 🌱 Зона 4 | user/watering/control | RELAY_ON 4 | RELAY_OFF 4 |
+| 🌱 Зона 5 | user/watering/control | RELAY_ON 5 | RELAY_OFF 5 |
+| 🌱 Зона 6 | user/watering/control | RELAY_ON 6 | RELAY_OFF 6 |
 
 
 ## Слайдеры параметров
@@ -425,7 +425,7 @@ Wi-Fi подключен   : ДА
 IP-адрес          : 192.168.1.105
 MQTT подключен    : ДА
 ...
-
+```
 ---
 
 
@@ -481,7 +481,7 @@ sa — разработка и поддержка
 * wqtt.ru(https://wqtt.ru/) — за публичный MQTT-брокер
 <div align="center">
 © 2026 sa · Auto Watering System
-Сделано с 💧 для вашего сада
+ · Сделано с 💧 для вашего сада
 </div>
 ```
 
