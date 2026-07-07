@@ -102,16 +102,16 @@
 
 ESP8266 NodeMCU Модуль реле 5В
 
-┌─────────────┐ ┌─────────────┐
-│ D1 ├──────────┤ IN1 │
-│ D2 ├──────────┤ IN2 │
-│ D5 ├──────────┤ IN3 │
-│ D6 ├──────────┤ IN4 │
-│ D7 ├──────────┤ IN5 │
-│ D8 ├──────────┤ IN6 │
-│ 3V3 ├──────────┤ VCC (опто.) │
-│ GND ├──────────┤ GND │
-└─────────────┘ └─────────────┘
+
+│ D1 ├-┤ IN1 │
+│ D2 ├-┤ IN2 │
+│ D5 ├-┤ IN3 │
+│ D6 ├-┤ IN4 │
+│ D7 ├-┤ IN5 │
+│ D8 ├-┤ IN6 │
+│ 3V3 ├-┤ VCC (опто.) │
+│ GND ├-┤ GND │
+
 │
 [5В БП]
 
@@ -170,12 +170,9 @@ ESP8266 NodeMCU Модуль реле 5В
 
 ### Инструкция
 
-
-
-
 ---
 
-##  KAB@K9 AB0@B
+## 🚀 Быстрый старт
 
 ### 1. Установка Arduino IDE
 
@@ -232,7 +229,7 @@ START
 
 ---
 
-## ᠡB@C:BC@0 MQTT-B>?8:>2
+## 📡 Структура MQTT-топиков
 
 Все топики используют префикс логина `user` (настраивается в `MQTT_LOGIN`).
 
@@ -294,10 +291,10 @@ START
 }
 
 
-¥ Serial CLI
-Скорость: 115200 baud
-Сетевые команды (требуют SAVE)
+### 🖥️ Serial CLI  
 
+Скорость: 115200 baud
+## Сетевые команды (требуют SAVE)
 
 ---------------------------------------------
 | |Команда | |Описание | |Пример |
@@ -318,7 +315,7 @@ START
 ---------------------------------------------
 | |SAVE | |Сохранить и перезагрузить | |SAVE |
 
-Команды полива
+## Команды полива  
 
 ---------------------------------------------
 | |Команда | |Описание | |Пример |
@@ -338,7 +335,7 @@ START
 | |SET_CYCLE <N> | |Кол-во циклов (0 = ∞) | |SET_CYCLE 10 |
 
 
-Команды расписания
+## Команды расписания  
 
 ---------------------------------------------
 | |Команда | |Описание | |Пример |
@@ -359,7 +356,7 @@ START
 ---------------------------------------------
 | |SET_DAY7 <0|1> | |Воскресенье | |SET_DAY7 1 |
 
-Диагностика
+## Диагностика
 ---------------------------------------------
 | |Команда | |Описание |
 ---------------------------------------------
@@ -369,8 +366,9 @@ START
 ---------------------------------------------
 | |HELP | |Справка по командам |
 
-׏ @E8B5:BC@0
-Неблокирующий дизайн
+### 🏗️ Архитектура
+
+## Неблокирующий дизайн
 Вся прошивка построена на конечных автоматах (State Machine) без использования delay() в основном цикле. Это обеспечивает:
 
 * Мгновенную обработку команд
@@ -415,7 +413,7 @@ START
 
 
 
-Структура EEPROM
+## Структура EEPROM
 Offset  Size  Description
 ──────────────────────────────────────
 0       1     Magic byte (0xAB)
@@ -435,7 +433,7 @@ Offset  Size  Description
 ──────────────────────────────────────
 Total:  320 bytes (из 512 доступных)
 
-񠘽B53@0F8O A MQTT Dash
+### 📱 Интеграция с MQTT Dash  
 Пример настройки в приложении MQTT Dash (Android):
 Переключатели дней недели
 
@@ -458,7 +456,7 @@ Total:  320 bytes (из 512 доступных)
 ---------------------------------------------
 | |Š>A:@5A5=L5 | |user/watering/day7 | |1 | |0 |
 
-Кнопки управления
+## Кнопки управления
 ---------------------------------------------
 | |Название | |Topic | |Press | |Release |
 ---------------------------------------------
@@ -479,7 +477,7 @@ Total:  320 bytes (из 512 доступных)
 | |1 >=0 6 | |user/watering/control | |RELAY_ON 6 | |RELAY_OFF 6 |
 
 
-Слайдеры параметров
+## Слайдеры параметров
 
 ---------------------------------------------
 | |Название | |Topic | |Min | |Max |
@@ -491,8 +489,8 @@ Total:  320 bytes (из 512 доступных)
 | | &8:;K | |user/watering/cycle | |0 | |100 |
 
 
- B;04:0
-Ошибки подключения
+🔍 Отладка
+## Ошибки подключения
 
 Проверка через Serial
 > STATUS
@@ -511,8 +509,7 @@ MQTT подключен    : ДА
 
 
 
-ʠAB>@8O 25@A89
-
+### 📊 История версий
 
 ---------------------------------------------
 | |Версия | |Дата | |Изменения |
@@ -533,13 +530,46 @@ MQTT подключен    : ДА
 ---------------------------------------------
 | |1.0 | |30.06.2026 | |Первая версия: 6 реле, MQTT, EEPROM, Serial CLI |
 
-d 2B>@
+
+### 📄 Лицензия
+Этот проект распространяется под лицензией MIT.
+
+## MIT License
+
+## Copyright (c) 2026 sa
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+
+### 👤 Автор
 sa — разработка и поддержка
 
-O ;03>40@=>AB8
+### 🙏 Благодарности
+
 * ESP8266 Community(https://github.com/esp8266) — за платформу
 * PubSubClient(https://github.com/knolleary/pubsubclient) by Nick O'Leary — за MQTT-клиент
 * wqtt.ru(https://wqtt.ru/) — за публичный MQTT-брокер
 <div align="center">
 © 2026 sa · Auto Watering System
-!45;0=> A § 4;O 20H53> A040
+Сделано с 💧 для вашего сада
+</div>
+```
+
+
