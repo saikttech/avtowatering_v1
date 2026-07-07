@@ -170,8 +170,9 @@ START
 
 Или через MQTT (топик `user/watering/control`):
 
-``` bash   
-START   
+``` bash      
+START      
+```   
 
 ---
 
