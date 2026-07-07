@@ -100,9 +100,9 @@
 
 ### Схема подключения
 
-ESP8266 NodeMCU Модуль реле 5В
+|ESP8266 NodeMCU| - |Модуль реле 5В|
 
-
+|---|---|---|
 │ D1 ├-┤ IN1 │
 │ D2 ├-┤ IN2 │
 │ D5 ├-┤ IN3 │
@@ -143,7 +143,7 @@ http://arduino.esp8266.com/stable/package_esp8266com_index.json
 ### 4. Первоначальная настройка
 
 Откройте Serial Monitor (115200 baud) и выполните:
-
+```
 WIFI_SSID ИмяВашейСети
 WIFI_PASS ВашПароль
 MQTT_HOST m5.wqtt.ru
@@ -151,14 +151,14 @@ MQTT_PORT 13594
 MQTT_USER user
 MQTT_PASS ВашПарольОтMQTT
 SAVE
-
+```
 
 После перезагрузки устройство подключится к сети автоматически.
 
 ### 5. Запуск полива
 
 Через Serial:
-
+```
 SET_ONTIME 30
 SET_INTERVAL 5
 SET_CYCLE 3
@@ -166,11 +166,11 @@ SET_DAY1 1
 SET_DAY3 1
 SET_DAY5 1
 START
-
+```
 
 Или через MQTT (топик `user/watering/control`):
 
-``` bash      
+```       
 START      
 ```   
 
