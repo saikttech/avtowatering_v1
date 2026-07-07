@@ -113,7 +113,3 @@ ESP8266 NodeMCU Модуль реле 5В
 
 ---
 
-  user/watering/day7      — 0/1 (воскресенье)
---- MQTT КОМАНДЫ (топик user/watering/control) ---
-  START / STOP / RELAY_ON N / RELAY_OFF N / STATUS
-===========================================
