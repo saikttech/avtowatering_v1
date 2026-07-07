@@ -237,7 +237,7 @@ START
   "ntp_server": "pool.ntp.org"
 }
 ```
----
+
 
 ## Документация
 ## 🖥️ Serial CLI  
@@ -370,6 +370,7 @@ START
 ```
 
 ## Структура EEPROM
+
 Offset  Size  Description
 ──────────────────────────────────────
 0       1     Magic byte (0xAB)
