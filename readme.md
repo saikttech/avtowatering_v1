@@ -236,7 +236,8 @@ START
   "mqtt_host": "m5.wqtt.ru:13594",
   "ntp_server": "pool.ntp.org"
 }
-
+```
+---
 
 ## Документация
 ## 🖥️ Serial CLI  
