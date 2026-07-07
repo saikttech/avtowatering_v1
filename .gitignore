@@ -1,0 +1,18 @@
+# Arduino
+*.hex
+*.elf
+*.bin
+*.map
+
+# Arduino IDE
+.pio/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup
+*.bak
+*.backup
