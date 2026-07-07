@@ -102,67 +102,17 @@
 
 ESP8266 NodeMCU Модуль реле 5В
 
-┌─────────────┐ ┌─────────────┐
-│ D1 ├──────────┤ IN1 │
-│ D2 ├──────────┤ IN2 │
-│ D5 ├──────────┤ IN3 │
-│ D6 ├──────────┤ IN4 │
-│ D7 ├──────────┤ IN5 │
-│ D8 ├──────────┤ IN6 │
-│ 3V3 ├──────────┤ VCC (опто.) │
-│ GND ├──────────┤ GND │
-└─────────────┘ └─────────────┘
-│
-[5В БП]
+│ D1 - IN1 │
+│ D2 - IN2 │
+│ D5 - IN3 │
+│ D6 - IN4 │
+│ D7 - IN5 │
+│ D8 - IN6 │
+│ 3V3 - VCC (опто.) │
+│ GND - GND │
 
-### HELP
+---
 
-===========================================
- ДОСТУПНЫЕ КОМАНДЫ:
-===========================================
---- Сеть (требуют SAVE) ---
-  WIFI_SSID <name>       — Wi-Fi SSID
-  WIFI_PASS <pass>       — Wi-Fi пароль
-  MQTT_HOST <url>        — MQTT брокер
-  MQTT_PORT <port>       — MQTT порт
-  MQTT_USER <user>       — MQTT пользователь
-  MQTT_PASS <pass>       — MQTT пароль
-  NTP_SERVER <url>       — NTP-сервер
-  SAVE                   — сохранить и перезагрузить
---- Полив ---
-  START                  — запустить полив
-  STOP                   — остановить полив
-  RELAY_ON <1-6>         — включить реле
-  RELAY_OFF <1-6>        — выключить реле
-  SET_INTERVAL <min>     — интервал между реле (мин)
-  SET_ONTIME <sec>       — время вкл. реле (сек)
-  SET_CYCLE <N>          — кол-во циклов (0 = бесконечно)
---- Дни полива (0=выкл, 1=вкл) ---
-  SET_DAY0 <0|1>         — каждый день (игнорирует др.)
-  SET_DAY1 <0|1>         — понедельник
-  SET_DAY2 <0|1>         — вторник
-  SET_DAY3 <0|1>         — среда
-  SET_DAY4 <0|1>         — четверг
-  SET_DAY5 <0|1>         — пятница
-  SET_DAY6 <0|1>         — суббота
-  SET_DAY7 <0|1>         — воскресенье
---- Диагностика ---
-  STATUS                 — показать статус
-  TIME                   — текущее время МСК
-  HELP                   — эта справка
-===========================================
-
---- MQTT ТОПИКИ (payload) ---
-  user/watering/time      — число (сек)
-  user/watering/interval  — число (мин)
-  user/watering/cycle     — число (0=∞)
-  user/watering/day0      — 0/1 (каждый день)
-  user/watering/day1      — 0/1 (понедельник)
-  user/watering/day2      — 0/1 (вторник)
-  user/watering/day3      — 0/1 (среда)
-  user/watering/day4      — 0/1 (четверг)
-  user/watering/day5      — 0/1 (пятница)
-  user/watering/day6      — 0/1 (суббота)
   user/watering/day7      — 0/1 (воскресенье)
 --- MQTT КОМАНДЫ (топик user/watering/control) ---
   START / STOP / RELAY_ON N / RELAY_OFF N / STATUS
