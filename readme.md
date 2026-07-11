@@ -450,7 +450,7 @@ MQTT подключен    : ДА
 
 ## MIT License
 
-## Copyright (c) 2026 sa
+## Copyright (c) 2026 dsaru
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -473,7 +473,7 @@ SOFTWARE.
 
 
 ### 👤 Автор
-sa — разработка и поддержка
+dsaru — разработка и поддержка
 
 ### 🙏 Благодарности
 
@@ -481,7 +481,7 @@ sa — разработка и поддержка
 * PubSubClient(https://github.com/knolleary/pubsubclient) by Nick O'Leary — за MQTT-клиент
 * wqtt.ru(https://wqtt.ru/) — за публичный MQTT-брокер
 <div align="center">
-© 2026 sa · Auto Watering System
+© 2026 dsaru · Auto Watering System
  · Сделано с 💧 для вашего сада
 </div>
 
