@@ -1,30 +1,207 @@
 /*
  * ============================================================================
  *  СИСТЕМА АВТОПОЛИВА НА ESP8266 NodeMCU
- *  Версия: 1.6 (отдельные топики для каждого дня недели)
+ *  Версия: 1.6.1 (исправление бага таймеров)
  *  Автор: sa
  * ============================================================================
  *
- *  ЧТО НОВОГО В ВЕРСИИ 1.6:
+ *  ЧТО ИСПРАВЛЕНО В ВЕРСИИ 1.6.1:
  *  ─────────────────────────────────────────────────────────────────────────
- *  • Убран топик dsaru/watering/days
- *  • Добавлены 8 отдельных топиков:
- *      dsaru/watering/day0 — каждый день (1=вкл, 0=выкл)
- *      dsaru/watering/day1 — понедельник
- *      dsaru/watering/day2 — вторник
- *      dsaru/watering/day3 — среда
- *      dsaru/watering/day4 — четверг
- *      dsaru/watering/day5 — пятница
- *      dsaru/watering/day6 — суббота
- *      dsaru/watering/day7 — воскресенье
- *  • Payload для всех day-топиков: "0" или "1"
- *  • Каждый день управляется независимо
- *  • Если day0 = 1 — полив каждый день (остальные игнорируются)
+ *  • Исправлен критический баг в updateWateringLogic():
+ *    реле включались и сразу выключались без учёта onTime.
+ *  • wateringTimerStart теперь устанавливается ДО вызова setRelay()
+ *  • Проверка условия перенесена на следующий такт через break
+ *  • Используется свежее значение millis() при проверке условия
+ *
+ *  ФУНКЦИОНАЛ (без изменений с v1.6):
+ *  ─────────────────────────────────────────────────────────────────────────
+ *  • 6 реле с отдельными MQTT-топиками для каждого дня недели (day0-day7)
+ *  • Отдельные топики для параметров (time, interval, cycle)
+ *  • NTP-синхронизация, время МСК в EEPROM
+ *  • Параметр cycle — количество полных циклов (0 = бесконечно)
+ *  • Failsafe при потере связи
+ *  • Serial CLI + MQTT команды
+ *
+ *  MQTT ТОПИКИ:
+ *  ─────────────────────────────────────────────────────────────────────────
+ *  user/watering/status      ← ESP публикует JSON-статус
+ *  user/watering/log         ← ESP публикует логи
+ *  user/watering/control     ← Команды управления (START, STOP, RELAY_ON...)
+ *  user/watering/time        ← Время включения реле (payload: число, сек)
+ *  user/watering/interval    ← Интервал между реле (payload: число, мин)
+ *  user/watering/cycle       ← Кол-во циклов (payload: число, 0=∞)
+ *  user/watering/day0        ← Каждый день (0/1)
+ *  user/watering/day1..day7  ← Пн..Вс (0/1)
  *
  * ============================================================================
  * 
- * HELP
- *  * > STATUS
+ * # 💧 Auto Watering System ESP8266
+
+## 📖 Описание
+
+**Auto Watering System** — это прошивка для микроконтроллера ESP8266 NodeMCU, реализующая систему автоматического полива с управлением через MQTT-брокер и Serial CLI. Система поддерживает расписание по дням недели, настраиваемые параметры полива, синхронизацию времени по NTP и сохранение всех настроек в энергонезависимой памяти.
+
+Проект разработан для управления **6 независимыми зонами полива** (например, грядками, газонами, теплицами) с возможностью гибкой настройки времени, интервалов и расписания.
+
+---
+
+## ✨ Возможности
+
+### 🎛️ Управление
+- ✅ Управление **6 реле** (зоны полива)
+- ✅ Ручное включение/выключение каждого реле
+- ✅ Автоматический цикл: поочерёдное включение реле 1→2→3→4→5→6
+- ✅ Настраиваемое время включения реле (секунды)
+- ✅ Настраиваемый интервал между реле (минуты)
+- ✅ Настраиваемое количество циклов (0 = бесконечно)
+
+### 📅 Расписание
+- ✅ Расписание полива по дням недели
+- ✅ Отдельные топики для каждого дня (`day0`...`day7`)
+- ✅ Режим "каждый день" (главный переключатель)
+- ✅ Автоматическая проверка дня недели перед запуском
+
+### 🌐 Сеть и MQTT
+- ✅ Подключение к Wi-Fi (2.4 GHz)
+- ✅ MQTT-клиент с автоматическим переподключением
+- ✅ Отдельные топики для параметров (числовой payload)
+- ✅ LWT (Last Will and Testament) для отслеживания статуса
+- ✅ Совместимость с публичным брокером `wqtt.ru`
+
+### 🕐 Время
+- ✅ NTP-синхронизация времени
+- ✅ Часовой пояс МСК (UTC+3)
+- ✅ Сохранение времени в EEPROM (раз в 10 минут)
+- ✅ Fallback на uptime при отсутствии синхронизации
+
+### 💾 Энергонезависимость
+- ✅ Все настройки сохраняются в EEPROM
+- ✅ Восстановление состояния реле после перезагрузки
+- ✅ Magic byte для валидации конфигурации
+- ✅ Миграция со старых версий прошивки
+
+### 🛡️ Безопасность
+- ✅ **Failsafe**: при потере связи все реле немедленно выключаются
+- ✅ Автоматическая остановка полива при обрыве связи
+- ✅ Непрерывный мониторинг WiFi и MQTT
+
+### 🖥️ Интерфейсы
+- ✅ Serial CLI (115200 baud) для настройки и отладки
+- ✅ MQTT-команды для удалённого управления
+- ✅ JSON-статус для интеграции с умным домом
+- ✅ Системные логи в MQTT-топике
+
+---
+
+## 🔧 Аппаратные требования
+
+### Необходимое оборудование
+
+| Компонент | Количество | Примечание |
+|---|---|---|
+| ESP8266 NodeMCU | 1 | ESP-12E/F |
+| Модуль реле 5В | 6 | С оптоизоляцией, активный LOW |
+| Блок питания 5В 2А | 1 | Для ESP и реле |
+| Провода | — | Подключение реле |
+
+### Распиновка (критично!)
+
+| Реле | Пин NodeMCU | GPIO | Назначение |
+|---|---|---|---|
+| Реле 1 | **D1** | GPIO5 | Зона полива 1 |
+| Реле 2 | **D2** | GPIO4 | Зона полива 2 |
+| Реле 3 | **D5** | GPIO14 | Зона полива 3 |
+| Реле 4 | **D6** | GPIO12 | Зона полива 4 |
+| Реле 5 | **D7** | GPIO13 | Зона полива 5 |
+| Реле 6 | **D8** | GPIO15 | Зона полива 6 |
+
+> ⚠️ **ЗАПРЕЩЕНО использовать пины**: D3 (GPIO0), D4 (GPIO2), D9 (GPIO1/TX), D10 (GPIO3/RX) — они конфликтуют с загрузкой и Serial.
+
+> ⚠️ **D8 (GPIO15)** при загрузке должен быть LOW. Убедитесь, что модуль реле корректно работает на этом пине.
+
+### Схема подключения
+ESP8266 NodeMCU Модуль реле 5В
+┌─────────────┐ ┌─────────────┐
+│ D1 ├──────────┤ IN1 │
+│ D2 ├──────────┤ IN2 │
+│ D5 ├──────────┤ IN3 │
+│ D6 ├──────────┤ IN4 │
+│ D7 ├──────────┤ IN5 │
+│ D8 ├──────────┤ IN6 │
+│ 3V3 ├──────────┤ VCC (опто.) │
+│ GND ├──────────┤ GND │
+└─────────────┘ └─────────────┘
+│
+[5В БП]
+
+
+---
+
+## 📡 Структура MQTT-топиков
+
+Все топики используют префикс логина `user` (настраивается в `MQTT_LOGIN`).
+
+### Топики ESP → Клиент (публикация)
+
+| Топик | Частота | Содержимое |
+|---|---|---|
+| `user/watering/status` | 30 сек | JSON-статус системы |
+| `user/watering/log` | По событию | Системные логи |
+
+### Топики Клиент → ESP (команды)
+
+| Топик | Payload | Описание |
+|---|---|---|
+| `user/watering/control` | `START` | Запустить полив |
+| `user/watering/control` | `STOP` | Остановить полив |
+| `user/watering/control` | `RELAY_ON N` | Включить реле N (1-6) |
+| `user/watering/control` | `RELAY_OFF N` | Выключить реле N |
+| `user/watering/control` | `STATUS` | Запрос статуса |
+| `user/watering/time` | `30` | Время полива (сек) |
+| `user/watering/interval` | `5` | Интервал (мин) |
+| `user/watering/cycle` | `10` | Кол-во циклов (0 = ∞) |
+| `user/watering/day0` | `0` / `1` | Каждый день |
+| `user/watering/day1` | `0` / `1` | Понедельник |
+| `user/watering/day2` | `0` / `1` | Вторник |
+| `user/watering/day3` | `0` / `1` | Среда |
+| `user/watering/day4` | `0` / `1` | Четверг |
+| `user/watering/day5` | `0` / `1` | Пятница |
+| `user/watering/day6` | `0` / `1` | Суббота |
+| `user/watering/day7` | `0` / `1` | Воскресенье |
+
+### Пример JSON-статуса
+
+```json
+{
+  "moscow_time": "04.07.2026 19:30:15 МСК",
+  "ntp_synced": true,
+  "uptime": "0d 00:25:10",
+  "wifi": true,
+  "ip": "192.168.1.105",
+  "mqtt": true,
+  "watering": true,
+  "state": 1,
+  "current_relay": 3,
+  "cycle_count": 5,
+  "cycles_completed": 2,
+  "interval_min": 5,
+  "ontime_sec": 30,
+  "watering_days": "Пн, Ср, Пт",
+  "days": {
+    "day0": 0, "day1": 1, "day2": 0,
+    "day3": 1, "day4": 0, "day5": 1,
+    "day6": 0, "day7": 0
+  },
+  "relays": [0, 0, 1, 0, 0, 0],
+  "ssid": "MyHomeWiFi",
+  "mqtt_host": "m5.wqtt.ru:13594",
+  "ntp_server": "pool.ntp.org"
+}
+
+===========================================
+ HELP
+ ===========================================
+ > STATUS
 ===========================================
  СТАТУС СИСТЕМЫ
 ===========================================
@@ -98,15 +275,15 @@ const uint8_t RELAY_PINS[NUM_RELAYS] = { D1, D2, D5, D6, D7, D8 };
 #define MQTT_TOPIC_INTERVAL   MQTT_LOGIN "/watering/interval"
 #define MQTT_TOPIC_CYCLE      MQTT_LOGIN "/watering/cycle"
 
-// --- Топики дней недели (НОВЫЕ) ---
-#define MQTT_TOPIC_DAY0       MQTT_LOGIN "/watering/day0"   // Каждый день
-#define MQTT_TOPIC_DAY1       MQTT_LOGIN "/watering/day1"   // Понедельник
-#define MQTT_TOPIC_DAY2       MQTT_LOGIN "/watering/day2"   // Вторник
-#define MQTT_TOPIC_DAY3       MQTT_LOGIN "/watering/day3"   // Среда
-#define MQTT_TOPIC_DAY4       MQTT_LOGIN "/watering/day4"   // Четверг
-#define MQTT_TOPIC_DAY5       MQTT_LOGIN "/watering/day5"   // Пятница
-#define MQTT_TOPIC_DAY6       MQTT_LOGIN "/watering/day6"   // Суббота
-#define MQTT_TOPIC_DAY7       MQTT_LOGIN "/watering/day7"   // Воскресенье
+// --- Топики дней недели ---
+#define MQTT_TOPIC_DAY0       MQTT_LOGIN "/watering/day0"
+#define MQTT_TOPIC_DAY1       MQTT_LOGIN "/watering/day1"
+#define MQTT_TOPIC_DAY2       MQTT_LOGIN "/watering/day2"
+#define MQTT_TOPIC_DAY3       MQTT_LOGIN "/watering/day3"
+#define MQTT_TOPIC_DAY4       MQTT_LOGIN "/watering/day4"
+#define MQTT_TOPIC_DAY5       MQTT_LOGIN "/watering/day5"
+#define MQTT_TOPIC_DAY6       MQTT_LOGIN "/watering/day6"
+#define MQTT_TOPIC_DAY7       MQTT_LOGIN "/watering/day7"
 
 #define DEFAULT_NTP_SERVER    "pool.ntp.org"
 #define MSK_OFFSET_SEC        10800
@@ -123,7 +300,7 @@ const uint8_t RELAY_PINS[NUM_RELAYS] = { D1, D2, D5, D6, D7, D8 };
 #define DEFAULT_INTERVAL_MIN  5
 #define DEFAULT_ONTIME_SEC    30
 #define DEFAULT_CYCLE_COUNT   0
-#define DEFAULT_WATERING_DAYS 0x01    // 0x01 = бит 0 установлен = "каждый день"
+#define DEFAULT_WATERING_DAYS 0x01    // 0x01 = "каждый день"
 
 #define WIFI_RETRY_INTERVAL   10000
 #define MQTT_RETRY_INTERVAL   5000
@@ -154,7 +331,7 @@ struct Config {
   uint32_t cycleCount;
   uint32_t lastKnownTime;
   char     ntpServer[MAX_NTP_LEN + 1];
-  uint8_t  wateringDays;              // Битовая маска: бит0=каждый день, бит1=Пн...бит7=Вс
+  uint8_t  wateringDays;
 };
 
 Config config;
@@ -234,7 +411,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println(F("==========================================="));
-  Serial.println(F(" СИСТЕМА АВТОПОЛИВА ESP8266 v1.6"));
+  Serial.println(F(" СИСТЕМА АВТОПОЛИВА ESP8266 v1.6.1"));
   Serial.println(F(" Автор: sa"));
   Serial.println(F("==========================================="));
 
@@ -354,8 +531,6 @@ String getMoscowTimeString() {
 // ============================================================================
 // РАСПИСАНИЕ: ДНИ НЕДЕЛИ
 // ============================================================================
-
-// Возвращает имя дня по индексу (0=каждый день, 1=Пн, ..., 7=Вс)
 const char* getDayName(uint8_t dayIndex) {
   static const char* names[] = {
     "Каждый день", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"
@@ -364,7 +539,6 @@ const char* getDayName(uint8_t dayIndex) {
   return names[dayIndex];
 }
 
-// Возвращает MQTT-топик по индексу дня
 const char* getDayTopicByIndex(uint8_t dayIndex) {
   static const char* topics[] = {
     MQTT_TOPIC_DAY0, MQTT_TOPIC_DAY1, MQTT_TOPIC_DAY2, MQTT_TOPIC_DAY3,
@@ -374,36 +548,26 @@ const char* getDayTopicByIndex(uint8_t dayIndex) {
   return topics[dayIndex];
 }
 
-// Проверка: включен ли конкретный день
 bool isDayEnabled(uint8_t dayIndex) {
   if (dayIndex > 7) return false;
   return (config.wateringDays & (1 << dayIndex)) != 0;
 }
 
-// Проверка: сегодня день полива?
 bool isWateringDay() {
-  // Если включен режим "каждый день" (бит 0) — всегда true
   if (config.wateringDays & 0x01) return true;
-
-  // Если NTP не синхронизирован — безопасное поведение (каждый день)
   if (!ntpSynced) return true;
 
-  // Определяем текущий день недели
   time_t now = time(nullptr);
   struct tm timeinfo;
   localtime_r(&now, &timeinfo);
 
-  // tm_wday: 0=Вс, 1=Пн, 2=Вт, ..., 6=Сб
-  // Наши биты: бит 1=Пн, бит 2=Вт, ..., бит 7=Вс
   uint8_t wday = timeinfo.tm_wday;
-  uint8_t bitIndex = (wday == 0) ? 7 : wday;  // Вс → бит 7
+  uint8_t bitIndex = (wday == 0) ? 7 : wday;
 
   return (config.wateringDays & (1 << bitIndex)) != 0;
 }
 
-// Формирует читаемую строку с активными днями
 String getWateringDaysString() {
-  // Если включен режим "каждый день"
   if (config.wateringDays & 0x01) {
     return "Каждый день";
   }
@@ -423,9 +587,7 @@ String getWateringDaysString() {
   return result;
 }
 
-// Обработка команды для топика dayX
 void handleDayCommand(const String& topic, const String& value) {
-  // Определяем индекс дня из топика
   int8_t dayIndex = -1;
   for (uint8_t i = 0; i <= 7; i++) {
     if (topic == getDayTopicByIndex(i)) {
@@ -439,14 +601,12 @@ void handleDayCommand(const String& topic, const String& value) {
     return;
   }
 
-  // Парсим значение (0 или 1)
   int val = value.toInt();
   if (val != 0 && val != 1) {
     logEvent("ERROR: В топике " + topic + " допустимы только значения 0 или 1");
     return;
   }
 
-  // Устанавливаем/сбрасываем бит
   if (val == 1) {
     config.wateringDays |= (1 << dayIndex);
   } else {
@@ -456,7 +616,6 @@ void handleDayCommand(const String& topic, const String& value) {
   String state = val ? "ВКЛ" : "ВЫКЛ";
   logEvent("CONFIG: " + String(getDayName(dayIndex)) + " (" + topic + ") = " + state);
 
-  // Если включили "каждый день" — логируем
   if (dayIndex == 0 && val == 1) {
     logEvent(F("NOTE: Режим 'каждый день' активен. Остальные дни игнорируются."));
   }
@@ -543,7 +702,7 @@ void initDefaultConfig() {
   strncpy(config.ntpServer, DEFAULT_NTP_SERVER, MAX_NTP_LEN);
   config.ntpServer[MAX_NTP_LEN] = '\0';
 
-  config.wateringDays = DEFAULT_WATERING_DAYS;  // 0x01 = "каждый день"
+  config.wateringDays = DEFAULT_WATERING_DAYS;
 }
 
 void loadConfig() {
@@ -591,11 +750,9 @@ void loadConfig() {
       Serial.println(F(" полных циклов"));
     }
 
-    // Выводим состояние дней
     Serial.print(F("[EEPROM] Дни полива: "));
     Serial.println(getWateringDaysString());
 
-    // Детальный вывод по каждому дню
     for (uint8_t i = 0; i <= 7; i++) {
       Serial.print(F("  day"));
       Serial.print(i);
@@ -689,13 +846,11 @@ void connectMQTT() {
   if (connected) {
     Serial.println(F("OK"));
 
-    // Подписка на все топики
     mqttClient.subscribe(MQTT_TOPIC_CONTROL);
     mqttClient.subscribe(MQTT_TOPIC_TIME);
     mqttClient.subscribe(MQTT_TOPIC_INTERVAL);
     mqttClient.subscribe(MQTT_TOPIC_CYCLE);
 
-    // Подписка на топики дней недели
     mqttClient.subscribe(MQTT_TOPIC_DAY0);
     mqttClient.subscribe(MQTT_TOPIC_DAY1);
     mqttClient.subscribe(MQTT_TOPIC_DAY2);
@@ -729,7 +884,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
   logEvent("MQTT RX [" + topicStr + "]: " + message);
 
-  // --- Обработка топиков дней недели ---
   if (topicStr == MQTT_TOPIC_DAY0 ||
       topicStr == MQTT_TOPIC_DAY1 ||
       topicStr == MQTT_TOPIC_DAY2 ||
@@ -742,7 +896,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     return;
   }
 
-  // --- Обработка параметрических топиков (число) ---
   if (topicStr == MQTT_TOPIC_TIME ||
       topicStr == MQTT_TOPIC_INTERVAL ||
       topicStr == MQTT_TOPIC_CYCLE) {
@@ -750,7 +903,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     return;
   }
 
-  // --- Обработка командного топика ---
   if (topicStr == MQTT_TOPIC_CONTROL) {
     executeCommand(message);
     return;
@@ -883,18 +1035,11 @@ void executeCommand(const String& rawCmd) {
     Serial.println(F("==========================================="));
     Serial.println(F(""));
     Serial.println(F("--- MQTT ТОПИКИ (payload) ---"));
-    Serial.println(F("  dsaru/watering/time      — число (сек)"));
-    Serial.println(F("  dsaru/watering/interval  — число (мин)"));
-    Serial.println(F("  dsaru/watering/cycle     — число (0=∞)"));
-    Serial.println(F("  dsaru/watering/day0      — 0/1 (каждый день)"));
-    Serial.println(F("  dsaru/watering/day1      — 0/1 (понедельник)"));
-    Serial.println(F("  dsaru/watering/day2      — 0/1 (вторник)"));
-    Serial.println(F("  dsaru/watering/day3      — 0/1 (среда)"));
-    Serial.println(F("  dsaru/watering/day4      — 0/1 (четверг)"));
-    Serial.println(F("  dsaru/watering/day5      — 0/1 (пятница)"));
-    Serial.println(F("  dsaru/watering/day6      — 0/1 (суббота)"));
-    Serial.println(F("  dsaru/watering/day7      — 0/1 (воскресенье)"));
-    Serial.println(F("--- MQTT КОМАНДЫ (топик dsaru/watering/control) ---"));
+    Serial.println(F("  user/watering/time      — число (сек)"));
+    Serial.println(F("  user/watering/interval  — число (мин)"));
+    Serial.println(F("  user/watering/cycle     — число (0=∞)"));
+    Serial.println(F("  user/watering/day0..day7 — 0/1 (дни недели)"));
+    Serial.println(F("--- MQTT КОМАНДЫ (топик user/watering/control) ---"));
     Serial.println(F("  START / STOP / RELAY_ON N / RELAY_OFF N / STATUS"));
     Serial.println(F("==========================================="));
     return;
@@ -1002,7 +1147,6 @@ void executeCommand(const String& rawCmd) {
       return;
     }
 
-    // Проверка дня недели
     if (!isWateringDay()) {
       logEvent("START: Сегодня не день полива. Расписание: " + getWateringDaysString());
       return;
@@ -1113,7 +1257,7 @@ void executeCommand(const String& rawCmd) {
   }
 
   // ------------------------------------------------------------------
-  // SET_DAY0 ... SET_DAY7 (НОВОЕ)
+  // SET_DAY0 ... SET_DAY7
   // ------------------------------------------------------------------
   if (command.startsWith("SET_DAY")) {
     String dayNumStr = command.substring(7);
@@ -1150,12 +1294,10 @@ void executeCommand(const String& rawCmd) {
 }
 
 // ============================================================================
-// ЛОГИКА АВТОПОЛИВА
+// ЛОГИКА АВТОПОЛИВА (ИСПРАВЛЕНО: корректная работа с таймерами)
 // ============================================================================
 void updateWateringLogic() {
   if (!wateringActive) return;
-
-  unsigned long now = millis();
 
   switch (wateringState) {
 
@@ -1163,13 +1305,20 @@ void updateWateringLogic() {
       break;
 
     case WS_RELAY_ON: {
+      // Включаем реле, если оно ещё не включено
       if (config.relayStates[currentRelayIndex] != 1) {
-        setRelay(currentRelayIndex, true);
+        // ИСПРАВЛЕНИЕ: сначала сбрасываем таймер, потом включаем реле
         wateringTimerStart = millis();
+        setRelay(currentRelayIndex, true);
+        // ИСПРАВЛЕНИЕ: выходим из switch, чтобы не проверять условие в этом же такте
+        break;
       }
 
+      // ИСПРАВЛЕНИЕ: получаем СВЕЖЕЕ значение millis() при проверке условия
       unsigned long onTimeMs = (unsigned long)config.onTimeSec * 1000UL;
-      if (now - wateringTimerStart >= onTimeMs) {
+      unsigned long elapsed = millis() - wateringTimerStart;
+
+      if (elapsed >= onTimeMs) {
         setRelay(currentRelayIndex, false);
         wateringTimerStart = millis();
         wateringState = WS_WAIT_INTERVAL;
@@ -1179,8 +1328,10 @@ void updateWateringLogic() {
 
     case WS_WAIT_INTERVAL: {
       unsigned long intervalMs = (unsigned long)config.intervalMin * 60UL * 1000UL;
+      // ИСПРАВЛЕНИЕ: свежее значение millis()
+      unsigned long elapsed = millis() - wateringTimerStart;
 
-      if (now - wateringTimerStart >= intervalMs) {
+      if (elapsed >= intervalMs) {
         currentRelayIndex++;
 
         if (currentRelayIndex >= NUM_RELAYS) {
@@ -1194,7 +1345,6 @@ void updateWateringLogic() {
                                (cyclesCompleted < config.cycleCount);
 
           if (continueCycle) {
-            // Проверка дня недели перед началом нового цикла
             if (!isWateringDay()) {
               wateringActive = false;
               wateringState  = WS_IDLE;
@@ -1259,7 +1409,6 @@ void printStatusSerial() {
   Serial.println(F(" СТАТУС СИСТЕМЫ"));
   Serial.println(F("==========================================="));
 
-  // Время и аптайм
   Serial.print(F("Время МСК         : "));
   Serial.println(getMoscowTimeString());
   Serial.print(F("Uptime            : "));
@@ -1267,7 +1416,6 @@ void printStatusSerial() {
   Serial.print(F("NTP синхрониз.    : "));
   Serial.println(ntpSynced ? F("ДА") : F("НЕТ"));
 
-  // Сеть
   Serial.println(F("--- Сеть ---"));
   Serial.print(F("Wi-Fi подключен   : "));
   Serial.println(WiFi.status() == WL_CONNECTED ? F("ДА") : F("НЕТ"));
@@ -1284,7 +1432,6 @@ void printStatusSerial() {
   Serial.print(F("NTP-сервер        : "));
   Serial.println(config.ntpServer);
 
-  // Параметры полива
   Serial.println(F("--- Параметры полива ---"));
   Serial.print(F("Время вкл. реле   : "));
   Serial.print(config.onTimeSec);
@@ -1301,7 +1448,6 @@ void printStatusSerial() {
   Serial.print(F("Дни полива        : "));
   Serial.println(getWateringDaysString());
 
-  // Детальное состояние дней
   Serial.println(F("  Детали по дням:"));
   for (uint8_t i = 0; i <= 7; i++) {
     Serial.print(F("    day"));
@@ -1312,7 +1458,6 @@ void printStatusSerial() {
     Serial.println(isDayEnabled(i) ? F("ВКЛ") : F("ВЫКЛ"));
   }
 
-  // Состояние полива
   Serial.println(F("--- Состояние полива ---"));
   Serial.print(F("Полив активен     : "));
   Serial.println(wateringActive ? F("ДА") : F("НЕТ"));
@@ -1327,7 +1472,6 @@ void printStatusSerial() {
   Serial.print(F("Выполнено циклов  : "));
   Serial.println(cyclesCompleted);
 
-  // Состояние реле
   Serial.println(F("--- Состояние реле ---"));
   for (uint8_t i = 0; i < NUM_RELAYS; i++) {
     Serial.print(F("  Реле "));
@@ -1361,7 +1505,6 @@ String buildStatusString() {
   s += "\"ontime_sec\":" + String(config.onTimeSec) + ",";
   s += "\"watering_days\":\"" + getWateringDaysString() + "\",";
 
-  // Детальные флаги по дням
   s += "\"days\":{";
   s += "\"day0\":" + String(isDayEnabled(0) ? 1 : 0) + ",";
   s += "\"day1\":" + String(isDayEnabled(1) ? 1 : 0) + ",";
